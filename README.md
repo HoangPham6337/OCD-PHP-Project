@@ -77,26 +77,25 @@ Table invitations {
 }
 ```
 ### Database Evolution 
-1. Change Proposals:
+#### 1. Change Proposals:
     - Users propose updates or new relationships. 
     - Data is inserted into the `modifications` table with a `'pending'` status.
 
-**Propose a profile update**
-A user proposes to update the name of a person
+**Propose a profile update**: _A user proposes to update the name of a person_
 ```sql
 INSERT INTO modifications (proposer_id, target_id, type, data, status, created_at) 
 VALUES (1, 10, 'profile_update', '{"first_name": "Updated Name"}', 'pending', NOW());
 
 ```
-**Propose a relationship**
-A user proposes adding a parent-child relationship
+**Propose a relationship**: _A user proposes adding a parent-child relationship_
 ```sql
 INSERT INTO modifications (proposer_id, target_id, type, data, status, created_at)
 VALUES (2, NULL, 'relationship_add', '{"parent_id": 10, "child_id": 15}', 'pending', NOW());
 
 ```
-    
-2. Validation:
+
+#### 2. Validation:
+**Validation steps**:
     - Community members vote on proposals.
     - Votes are recorded in the `modification_votes` table.
     - If a proposal receives 3 accepts, it is approved, and changes are applied to the database (`people` or `relationships` table).
@@ -114,8 +113,7 @@ INSERT INTO modification_votes (modification_id, voter_id, vote, created_at)
 VALUES (1, 4, 'reject', NOW());
 ```
 
-**Validation result**
-Vote count:
+**Validation result**: _Vote count:_
 ```sql
 SELECT 
     SUM(vote = 'accept') AS accepts,
@@ -124,14 +122,12 @@ FROM modification_votes
 WHERE modification_id = 1;
 ```
 
-Approval
+**Approval**:
 - If 3 or more accepts, the modification is approved: `UPDATE modifications SET status = 'approved' WHERE id = 1;`
 - For profile_update, apply the change: `UPDATE people SET first_name = 'Updated Name' WHERE id = 10;`
 - For relationship_add, insert into the relationships table: `INSERT INTO relationships (created_by, parent_id, child_id, created_at) VALUES (2, 10, 15, NOW());`
 - Update: `UPDATE modifications SET status = 'rejected' WHERE id = 1;`
-
-
-3. Example Workflow:
+#### 3. Example Workflow:
     - A user proposes a name update.
     - The proposal is voted on by 5 members (3 accepts, 2 rejects).
     - The name update is approved and applied to the `people` table.
